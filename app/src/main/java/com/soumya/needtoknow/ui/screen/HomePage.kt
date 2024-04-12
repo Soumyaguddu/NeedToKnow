@@ -128,10 +128,12 @@ fun HomePage() {
                             modifier = Modifier.align(Alignment.TopStart)
                         ) {
                             items.forEach { item ->
-                                DropdownMenuItem(text = { androidx.compose.material3.Text(text = item.toString()) }, onClick = {
-                                    selectedItem = item
-                                    expanded = false
-                                })
+                                DropdownMenuItem(
+                                    text = { androidx.compose.material3.Text(text = item.toString()) },
+                                    onClick = {
+                                        selectedItem = item
+                                        expanded = false
+                                    })
                             }
                         }
                     }
@@ -140,88 +142,120 @@ fun HomePage() {
                         painter = painterResource(id = R.drawable.drop_down_icon),
                         contentDescription = null,
                         tint = Color.Unspecified,
-                        modifier = Modifier.size(12.dp).clickable { expanded = true }
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clickable { expanded = true }
                     )
                 }
                 when (selectedItem) {
                     "Solar System" -> {
+                        var allCardsShown by remember { mutableStateOf(false) }
                         val states = planets.reversed()
                             .map { it to rememberSwipeableCardState() }
+                        var count = 0
 
+                        if (!allCardsShown) {
+                            Box(
+                                Modifier
+                                    .padding(24.dp)
+                                    .fillMaxSize()
 
-                        Box(
-                            Modifier
-                                .padding(24.dp)
-                                .fillMaxSize()
+                            ) {
+                                states.forEach { (matchProfile, state) ->
+                                    if (state.swipedDirection == null) {
+                                        ProfileCard(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .swipableCard(
+                                                    state = state,
+                                                    blockedDirections = listOf(Direction.Down),
+                                                    onSwiped = {
+                                                        count++
+                                                        if (states.size == count) {
+                                                            allCardsShown = true
+                                                        }
+                                                    },
+                                                    onSwipeCancel = {
+                                                        Log.d("Swipeable-Card", "Cancelled swipe")
 
-                        ) {
-                            states.forEach { (matchProfile, state) ->
-                                if (state.swipedDirection == null) {
-                                    ProfileCard(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .swipableCard(
-                                                state = state,
-                                                blockedDirections = listOf(Direction.Down),
-                                                onSwiped = {
-                                                    // swipes are handled by the LaunchedEffect
-                                                    // so that we track button clicks & swipes
-                                                    // from the same place
-                                                },
-                                                onSwipeCancel = {
-                                                    Log.d("Swipeable-Card", "Cancelled swipe")
-
-                                                }
-                                            ),
-                                        planet = matchProfile
-                                    )
-                                }
-                                LaunchedEffect(matchProfile, state.swipedDirection) {
-
+                                                    }
+                                                ),
+                                            planet = matchProfile
+                                        )
+                                    }
+                                    LaunchedEffect(matchProfile, state.swipedDirection) {
+                                        if (allCardsShown) {
+                                            allCardsShown = false
+                                            count = 0 // Reset the count for the next iteration
+                                        }
+                                    }
                                 }
                             }
                         }
+                        else {
+                            allCardsShown = false
+                        }
+
                     }
+
                     "Seven Wonder" -> {
-                        val states = wonders.reversed()
-                            .map { it to rememberSwipeableCardState() }
+                        var allCardsShown by remember { mutableStateOf(false) }
 
+                        var count = 0
+                        Log.e("allCardsShownNew", allCardsShown.toString())
+                        if (!allCardsShown) {
 
-                        Box(
-                            Modifier
-                                .padding(24.dp)
-                                .fillMaxSize()
+                            val states = wonders.reversed()
+                                .map { it to rememberSwipeableCardState() }
+                            Box(
+                                Modifier
+                                    .padding(24.dp)
+                                    .fillMaxSize()
 
-                        ) {
-                            states.forEach { (matchProfile, state) ->
-                                if (state.swipedDirection == null) {
-                                    WonderCard(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .swipableCard(
-                                                state = state,
-                                                blockedDirections = listOf(Direction.Down),
-                                                onSwiped = {
-                                                    // swipes are handled by the LaunchedEffect
-                                                    // so that we track button clicks & swipes
-                                                    // from the same place
-                                                },
-                                                onSwipeCancel = {
-                                                    Log.d("Swipeable-Card", "Cancelled swipe")
+                            ) {
+                                states.forEach { (matchProfile, state) ->
 
-                                                }
-                                            ),
-                                        planet = matchProfile
-                                    )
-                                }
-                                LaunchedEffect(matchProfile, state.swipedDirection) {
+                                    if (!allCardsShown && state.swipedDirection == null) {
+                                        WonderCard(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .swipableCard(
+                                                    state = state,
+                                                    blockedDirections = listOf(Direction.Down),
+                                                    onSwiped = {
+                                                        count++
+                                                        if (states.size == count) {
+                                                            allCardsShown = true
+                                                        }
 
+                                                        // swipes are handled by the LaunchedEffect
+                                                        // so that we track button clicks & swipes
+                                                        // from the same place
+                                                    },
+                                                    onSwipeCancel = {
+                                                        Log.d("Swipeable-Card", "Cancelled swipe")
+
+                                                    }
+                                                ),
+                                            planet = matchProfile
+                                        )
+                                    }
+                                    LaunchedEffect(true, state.swipedDirection) {
+                                        if (allCardsShown) {
+                                            allCardsShown = false
+                                            count = 0 // Reset the count for the next iteration
+                                        }
+
+                                    }
                                 }
                             }
+                        } else {
+                            allCardsShown = false
+
                         }
+
                     }
                 }
-
 
 
             }
@@ -235,9 +269,11 @@ private fun ProfileCard(
     modifier: Modifier,
     planet: PlanetInfo,
 ) {
-    Box( modifier
-        .fillMaxWidth()
-        .height(800.dp))
+    Box(
+        modifier
+            .fillMaxWidth()
+            .height(800.dp)
+    )
     {
 
         Box(modifier)
@@ -246,7 +282,8 @@ private fun ProfileCard(
                 Spacer(modifier = Modifier.height(100.dp))
                 androidx.compose.material3.Card(
                     modifier = Modifier
-                        .fillMaxWidth().height(320.dp),
+                        .fillMaxWidth()
+                        .height(320.dp),
 
                     shape = RoundedCornerShape(32.dp),
                     colors = CardDefaults.cardColors(planet.background),
@@ -266,7 +303,7 @@ private fun ProfileCard(
                                 color = Color(0xffFFFFFF),
                             )
                         )
-                       Text(
+                        Text(
                             text = planet.desc,
                             style = TextStyle(
                                 fontSize = 23.sp,
@@ -276,23 +313,23 @@ private fun ProfileCard(
                             )
                         )
                         Spacer(modifier = Modifier.height(32.dp))
-                        Row {
-                            androidx.compose.material3.Text(
-                                text = "Know more",
-                                style = TextStyle(
-                                    fontSize = 16.sp,
-                                    color = titleTextColor,
-                                    fontWeight = FontWeight.W400,
-                                    textAlign = TextAlign.Left
-                                )
-                            )
-                            Icon(
-                                Icons.Rounded.ArrowForward,
-                                contentDescription = null,
-                                tint = titleTextColor,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                        /* Row {
+                             androidx.compose.material3.Text(
+                                 text = "Know more",
+                                 style = TextStyle(
+                                     fontSize = 16.sp,
+                                     color = titleTextColor,
+                                     fontWeight = FontWeight.W400,
+                                     textAlign = TextAlign.Left
+                                 )
+                             )
+                             Icon(
+                                 Icons.Rounded.ArrowForward,
+                                 contentDescription = null,
+                                 tint = titleTextColor,
+                                 modifier = Modifier.size(18.dp)
+                             )
+                         }*/
                     }
                 }
             }
@@ -314,9 +351,11 @@ private fun WonderCard(
     modifier: Modifier,
     planet: WonderInfo,
 ) {
-    Box( modifier
-        .fillMaxWidth()
-        .height(800.dp))
+    Box(
+        modifier
+            .fillMaxWidth()
+            .height(800.dp)
+    )
     {
 
         Box(modifier)
@@ -325,7 +364,8 @@ private fun WonderCard(
                 Spacer(modifier = Modifier.height(80.dp))
                 androidx.compose.material3.Card(
                     modifier = Modifier
-                        .fillMaxWidth().height(320.dp),
+                        .fillMaxWidth()
+                        .height(320.dp),
 
                     shape = RoundedCornerShape(32.dp),
                     colors = CardDefaults.cardColors(planet.background),
@@ -345,7 +385,7 @@ private fun WonderCard(
                                 color = Color(0xffFFFFFF),
                             )
                         )
-                       Text(
+                        Text(
                             text = planet.desc,
                             style = TextStyle(
                                 fontSize = 23.sp,
@@ -355,23 +395,23 @@ private fun WonderCard(
                             )
                         )
                         Spacer(modifier = Modifier.height(32.dp))
-                        Row {
-                            androidx.compose.material3.Text(
-                                text = "Know more",
-                                style = TextStyle(
-                                    fontSize = 16.sp,
-                                    color = titleTextColor,
-                                    fontWeight = FontWeight.W400,
-                                    textAlign = TextAlign.Left
-                                )
-                            )
-                            Icon(
-                                Icons.Rounded.ArrowForward,
-                                contentDescription = null,
-                                tint = titleTextColor,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                        /*   Row {
+                               androidx.compose.material3.Text(
+                                   text = "Know more",
+                                   style = TextStyle(
+                                       fontSize = 16.sp,
+                                       color = titleTextColor,
+                                       fontWeight = FontWeight.W400,
+                                       textAlign = TextAlign.Left
+                                   )
+                               )
+                               Icon(
+                                   Icons.Rounded.ArrowForward,
+                                   contentDescription = null,
+                                   tint = titleTextColor,
+                                   modifier = Modifier.size(18.dp)
+                               )
+                           }*/
                     }
                 }
             }
@@ -387,6 +427,7 @@ private fun WonderCard(
 
     }
 }
+
 @Composable
 fun Scrim(modifier: Modifier = Modifier) {
     Box(
